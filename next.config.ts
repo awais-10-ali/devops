@@ -31,7 +31,6 @@ const getS3ImageConfig = () => {
 };
 
 const nextConfig: NextConfig = {
-  output: 'standalone',
   compress: true,
   poweredByHeader: false,
   // Ignore ESLint and TypeScript errors during builds to prevent build failures

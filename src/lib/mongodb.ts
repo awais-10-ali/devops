@@ -1,6 +1,6 @@
 /**
  * MongoDB client for Next.js
- * Replaces Prisma - uses MONGODB_URI from .env
+ * Uses Promise-based singleton to prevent connection pool exhaustion
  */
 import { MongoClient, Db } from 'mongodb';
 
@@ -11,23 +11,26 @@ if (!uri) {
   throw new Error('MONGODB_URI is required in .env');
 }
 
-const globalForMongo = global as unknown as { mongoClient: MongoClient; db: Db };
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
+const client = new MongoClient(uri, {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+});
+
+if (!global._mongoClientPromise) {
+  global._mongoClientPromise = client.connect();
+}
+
+const clientPromise: Promise<MongoClient> = global._mongoClientPromise;
 
 async function connect(): Promise<{ client: MongoClient; db: Db }> {
-  if (globalForMongo.mongoClient && globalForMongo.db) {
-    return { client: globalForMongo.mongoClient, db: globalForMongo.db };
-  }
-
-  const client = new MongoClient(uri);
-  await client.connect();
-  const db = client.db(dbName);
-
-  if (process.env.NODE_ENV !== 'production') {
-    globalForMongo.mongoClient = client;
-    globalForMongo.db = db;
-  }
-
-  return { client, db };
+  const mongoClient = await clientPromise;
+  const db = mongoClient.db(dbName);
+  return { client: mongoClient, db };
 }
 
 export async function getDb(): Promise<Db> {
