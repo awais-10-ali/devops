@@ -1,0 +1,44 @@
+
+services:
+  pipeline-db:
+    image: mongo:7
+    container_name: techsol-pipeline-db
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_DATABASE: inspired_analyst
+    volumes:
+      - mongo_pipeline_data:/data/db
+    networks:
+      - techsol-pipeline-net
+
+  pipeline-web:
+    image: node:20-alpine
+    container_name: techsol-pipeline-web
+    restart: unless-stopped
+    working_dir: /app
+    depends_on:
+      - pipeline-db
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      
+    volumes:
+      - .:/app
+    ports:
+      - "80:3000"
+    command: >
+      sh -c "apk add --no-cache libc6-compat &&
+      if [ ! -f .next/standalone/server.js ]; then npm ci && npm run build; fi &&
+      npm start"
+    networks:
+      - techsol-pipeline-net
+
+volumes:
+  mongo_pipeline_data:
+
+networks:
+  techsol-pipeline-net:
+    driver: bridge
