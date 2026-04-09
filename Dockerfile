@@ -1,16 +1,14 @@
-# syntax=docker/dockerfile:1
-
-# --- Base: Node on Alpine + libc compat for edge native deps ---
+#Dockerfile for Techsol
 FROM node:20-alpine AS base
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# --- Dependencies (cache-friendly) ---
+#Dependencies
 FROM base AS deps
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# --- Build (cap Node heap in this stage only — helps low-RAM hosts) ---
+#Build 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -18,7 +16,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_OPTIONS=--max-old-space-size=2048
 RUN npm run build
 
-# --- Production: standalone bundle only ---
+#Production
 FROM base AS runner
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
