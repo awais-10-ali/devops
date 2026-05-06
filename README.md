@@ -1,5 +1,6 @@
 # Inspired Analyst
 
+
 Production web application built with Next.js.
 
 ## Current Architecture
