@@ -2,7 +2,6 @@
 
 Production web application built with Next.js.
 
-
 ## Current Architecture
 
 The app  runs as a Node.js/Next.js service:
